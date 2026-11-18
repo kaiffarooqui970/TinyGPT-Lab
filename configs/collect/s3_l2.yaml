@@ -1,9 +1,10 @@
-# Residual stream after 2 blocks of S3 (half depth). Same data_seed + batch_size as the other
-# collections, so the first 2,097,152 tokens are identical across models (needed for Phase 9).
+# Residual stream after 2 blocks of S3 (half depth). Sequential non-overlapping windows from the
+# held-out val split: identical tokens across models (Phase 9), each used once.
 checkpoint: "runs/sweeps/scaling/*_s3_*/ckpt_final.pt"
 layer: 2
 data_dir: data/tinystories
-split: train
+split: val
+sequential: true
 n_tokens: 2097152
 batch_size: 64
 data_seed: 777

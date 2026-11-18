@@ -26,6 +26,7 @@ class TokenLoader:
         block_size: int,
         batch_size: int,
         seed: int = 0,
+        min_start: int = 0,
         device: str | torch.device = "cpu",
     ) -> None:
         self.block_size, self.batch_size, self.device = block_size, batch_size, device
@@ -35,6 +36,11 @@ class TokenLoader:
             raise ValueError("no shard is longer than block_size")
         self._cum = np.cumsum(starts)  # global start index -> (shard, offset)
         self._n_starts = int(self._cum[-1])
+        # Only global start indices >= min_start are sampled (e.g. to keep evaluation off
+        # tokens another stage already used). For a single shard this is a token offset.
+        if not 0 <= min_start < self._n_starts:
+            raise ValueError(f"min_start {min_start} outside [0, {self._n_starts})")
+        self.min_start = min_start
         self.gen = torch.Generator().manual_seed(seed)
         self.step = 0
 
@@ -57,7 +63,12 @@ class TokenLoader:
 
     def next_batch(self) -> tuple[torch.Tensor, torch.Tensor]:
         """Next training batch; advances the generator and the step counter."""
-        idx = torch.randint(self._n_starts, (self.batch_size,), generator=self.gen).numpy()
+        idx = (
+            self.min_start
+            + torch.randint(
+                self._n_starts - self.min_start, (self.batch_size,), generator=self.gen
+            ).numpy()
+        )
         self.step += 1
         return self._windows(idx)
 
@@ -67,7 +78,12 @@ class TokenLoader:
         """A fixed, repeatable set of batches (for evaluation), independent of training."""
         g = torch.Generator().manual_seed(seed)
         for _ in range(n_batches):
-            idx = torch.randint(self._n_starts, (self.batch_size,), generator=g).numpy()
+            idx = (
+                self.min_start
+                + torch.randint(
+                    self._n_starts - self.min_start, (self.batch_size,), generator=g
+                ).numpy()
+            )
             yield self._windows(idx)
 
     def state_dict(self) -> dict[str, Any]:

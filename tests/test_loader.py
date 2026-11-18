@@ -66,3 +66,11 @@ def test_fixed_eval_batches_repeatable(shards: list[Path]) -> None:
 def test_total_tokens(shards: list[Path]) -> None:
     dl = TokenLoader(shards, block_size=16, batch_size=2, seed=0)
     assert dl.total_tokens == 1000 + 37 + 2500
+
+
+def test_min_start_restricts_windows(shards: list[Path]) -> None:
+    dl = TokenLoader(shards[:1], block_size=16, batch_size=64, seed=0, min_start=500)
+    for _ in range(5):
+        x, _ = dl.next_batch()
+        assert int(x[:, 0].min()) >= 500
+    assert all(int(x[:, 0].min()) >= 500 for x, _ in dl.fixed_batches(3))

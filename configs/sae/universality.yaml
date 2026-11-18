@@ -2,7 +2,7 @@
 # S5, plus a second-seed S5 SAE as the reproducibility ceiling.
 name: universality
 base_config: configs/sae/base.yaml
-overrides: [k=32, max_tokens=2097152, heldout_tokens=262144, train_tokens=16777216]
+overrides: [k=32, heldout_tokens=262144, train_tokens=16777216]
 runs:
   s3: [acts_dir=data/acts/s3_l2]
   s4: [acts_dir=data/acts/s4_l3]

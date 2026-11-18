@@ -35,6 +35,7 @@ class CollectConfig:
     n_tokens: int = 4_000_000
     batch_size: int = 64
     data_seed: int = 777  # different from the training order
+    sequential: bool = False  # contiguous non-overlapping windows from the split start
     out_dir: str = "data/acts/s5_l3"
     shard_tokens: int = 1_048_576
     device: str = "auto"
@@ -46,12 +47,16 @@ def iter_activations(cfg: CollectConfig) -> Iterator[tuple[np.ndarray, np.ndarra
     device = pick_device(cfg.device)
     model, _ = load_gpt(resolve(cfg.checkpoint), device)
     T = model.cfg.block_size
-    loader = TokenLoader(
-        shard_paths(cfg.data_dir, cfg.split), T, cfg.batch_size, seed=cfg.data_seed
-    )
+    paths = shard_paths(cfg.data_dir, cfg.split)
+    if cfg.sequential:
+        batches: Iterator[torch.Tensor] = _sequential_batches(paths, T, cfg.batch_size)
+    else:
+        loader = TokenLoader(paths, T, cfg.batch_size, seed=cfg.data_seed)
+        batches = (loader.next_batch()[0] for _ in iter(int, 1))  # endless
     done = 0
-    while done < cfg.n_tokens:
-        x, _ = loader.next_batch()
+    for x in batches:
+        if done >= cfg.n_tokens:
+            break
         with torch.no_grad():
             r = model.residual(x.to(device), cfg.layer).float()
         take = min(x.numel(), cfg.n_tokens - done)
@@ -62,6 +67,20 @@ def iter_activations(cfg: CollectConfig) -> Iterator[tuple[np.ndarray, np.ndarra
         toks = x.reshape(-1)[:take].numpy().astype(np.uint16)
         done += take
         yield acts, toks
+
+
+def _sequential_batches(paths: list[Path], T: int, batch_size: int) -> Iterator[torch.Tensor]:
+    """Non-overlapping T-token windows in file order, batched: every token is used once."""
+    rows: list[np.ndarray] = []
+    for p in paths:
+        arr = np.memmap(p, dtype=np.uint16, mode="r")
+        for i in range(0, len(arr) - T + 1, T):
+            rows.append(np.asarray(arr[i : i + T], dtype=np.int64))
+            if len(rows) == batch_size:
+                yield torch.from_numpy(np.stack(rows))
+                rows = []
+    if rows:
+        yield torch.from_numpy(np.stack(rows))
 
 
 def collect(cfg: CollectConfig) -> dict:
@@ -125,6 +144,7 @@ def collect(cfg: CollectConfig) -> dict:
         "shard_sizes": shard_sizes,
         "dtype": "float16",
         "split": cfg.split,
+        "sequential": cfg.sequential,
         "norm_mean": s_norm / n,
         "norm_std": float(np.sqrt(s_norm2 / n - (s_norm / n) ** 2)),
         "norm_max": max_norm,
@@ -138,6 +158,14 @@ def collect(cfg: CollectConfig) -> dict:
 def _block_size(cfg: CollectConfig) -> int:
     ckpt = torch.load(resolve(cfg.checkpoint), map_location="cpu", weights_only=False)
     return int(ckpt["model_cfg"]["block_size"])
+
+
+def eval_min_start(meta: dict) -> int:
+    """First token offset that evaluation may use on the store's split. A sequential
+    collection from 'val' consumed val tokens [0, n_tokens), so evaluation starts after them."""
+    if meta.get("split") == "val" and meta.get("sequential"):
+        return int(meta["n_tokens"])
+    return 0
 
 
 class ActivationStore:

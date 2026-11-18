@@ -5,7 +5,7 @@ expansion: 16
 k: 32
 l1_coef: 1.0
 aux_coef: 0.03125
-train_tokens: 16777216   # ~4.3 epochs over 3.93M training activations
+train_tokens: 16777216   # ~9 epochs over 1.83M training activations (disk-limited store)
 heldout_tokens: 262144
 batch_size: 4096
 lr: 4.0e-4

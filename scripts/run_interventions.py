@@ -24,6 +24,7 @@ from tinygpt.interp.interventions import (
     steered_generations,
 )
 from tinygpt.model.gpt import load_gpt
+from tinygpt.sae.collect import eval_min_start
 from tinygpt.sae.train_sae import load_sae
 from tinygpt.tokenizer.bpe import EOT, BPETokenizer
 from tinygpt.train.metrics import pick_device
@@ -124,7 +125,11 @@ def main() -> None:
     tok = BPETokenizer.load(resolve(cfg.tokenizer))
     eos = tok.special_tokens[EOT]
     val = TokenLoader(
-        shard_paths(cfg.data_dir, "val"), model.cfg.block_size, cfg.eval_batch_size, seed=0
+        shard_paths(cfg.data_dir, "val"),
+        model.cfg.block_size,
+        cfg.eval_batch_size,
+        seed=0,
+        min_start=eval_min_start(meta),
     )
     batches = list(val.fixed_batches(cfg.eval_batches, seed=999))
     stats = np.load(resolve(cfg.sae).parent / "feature_stats.npz")

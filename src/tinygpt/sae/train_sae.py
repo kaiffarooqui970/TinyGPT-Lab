@@ -14,7 +14,7 @@ import torch
 from tinygpt.data.loader import TokenLoader
 from tinygpt.data.prepare import resolve, shard_paths
 from tinygpt.model.gpt import load_gpt
-from tinygpt.sae.collect import ActivationStore
+from tinygpt.sae.collect import ActivationStore, eval_min_start
 from tinygpt.sae.eval_sae import activation_metrics, downstream_ce
 from tinygpt.sae.sae import SAE, SAEConfig
 from tinygpt.train.metrics import pick_device
@@ -163,7 +163,11 @@ def evaluate_sae(
     m = activation_metrics(sae, held, device=device)
     model, _ = load_gpt(resolve(meta["checkpoint"]), device)
     val = TokenLoader(
-        shard_paths(cfg.data_dir, "val"), model.cfg.block_size, cfg.ce_eval_batch_size, seed=0
+        shard_paths(cfg.data_dir, "val"),
+        model.cfg.block_size,
+        cfg.ce_eval_batch_size,
+        seed=0,
+        min_start=eval_min_start(meta),  # never evaluate on tokens the SAE trained on
     )
     m.update(
         downstream_ce(

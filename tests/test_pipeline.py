@@ -101,3 +101,15 @@ def test_tiny_pipeline(tmp_path: Path) -> None:
     sae2, _ = load_sae(run / "sae.pt")
     assert json.loads((run / "final.json").read_text())["kind"] == "topk"
     assert sae2.n_latents == 128
+
+
+def test_sequential_batches_cover_each_token_once(tmp_path: Path) -> None:
+    from tinygpt.sae.collect import _sequential_batches
+
+    a = np.arange(1000, dtype=np.uint16)
+    a[:600].tofile(tmp_path / "v_000.bin")
+    a[600:].tofile(tmp_path / "v_001.bin")
+    rows = torch.cat(list(_sequential_batches(sorted(tmp_path.glob("v_*.bin")), 64, 4)))
+    flat = rows.reshape(-1)
+    assert rows.shape[1] == 64 and len(set(flat.tolist())) == flat.numel()  # no repeats
+    assert torch.all(rows[:, 1:] - rows[:, :-1] == 1)  # contiguous, within one shard

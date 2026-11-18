@@ -1,10 +1,11 @@
-# Residual stream after 3 blocks of S5 (half depth). Same data_seed + batch_size as the other
-# collections, so the first 2,097,152 tokens are identical across models (needed for Phase 9).
+# Residual stream after 3 blocks of S5 (half depth). Sequential non-overlapping windows from the
+# held-out val split: identical tokens across models (Phase 9), each used once.
 checkpoint: "runs/sweeps/scaling/*_s5_*/ckpt_final.pt"
 layer: 3
 data_dir: data/tinystories
-split: train
-n_tokens: 4194304
+split: val
+sequential: true
+n_tokens: 2097152
 batch_size: 64
 data_seed: 777
 out_dir: data/acts/s5_l3
