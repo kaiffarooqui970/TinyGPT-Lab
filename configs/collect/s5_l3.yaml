@@ -1,0 +1,12 @@
+# Residual stream after 3 blocks of S5 (half depth). Same data_seed + batch_size as the other
+# collections, so the first 2,097,152 tokens are identical across models (needed for Phase 9).
+checkpoint: "runs/sweeps/scaling/*_s5_*/ckpt_final.pt"
+layer: 3
+data_dir: data/tinystories
+split: train
+n_tokens: 4194304
+batch_size: 64
+data_seed: 777
+out_dir: data/acts/s5_l3
+shard_tokens: 1048576
+device: auto

@@ -21,7 +21,7 @@ def sweep_runs(sweep: str) -> list[dict[str, Any]]:
     latest: dict[str, Path] = {}
     for d in sorted(root.glob("*_*")):
         if (d / "final.json").exists():
-            latest[d.name.split("_", 2)[-1]] = d
+            latest[d.name.split("_", 1)[1]] = d
     out = []
     for name, d in latest.items():
         res = json.loads((d / "final.json").read_text())

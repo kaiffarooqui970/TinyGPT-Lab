@@ -22,21 +22,23 @@ def activation_metrics(
     """
     sae = sae.to(device).eval()
     n = acts.shape[0]
-    mean = torch.zeros(sae.cfg.d_in, dtype=torch.float64, device=device)
+    # float64 accumulators live on the CPU (MPS has no float64); per-batch sums are fp32.
+    mean = torch.zeros(sae.cfg.d_in, dtype=torch.float64)
     for i in range(0, n, batch_size):
-        mean += (acts[i : i + batch_size].to(device).float() * sae.scale).sum(0).double()
+        mean += (acts[i : i + batch_size].to(device).float() * sae.scale).sum(0).cpu().double()
     mean /= n
+    mean_dev = mean.float().to(device)
     sse = sst = l0 = 0.0
-    fires = torch.zeros(sae.n_latents, dtype=torch.float64, device=device)
+    fires = torch.zeros(sae.n_latents, dtype=torch.float64)
     for i in range(0, n, batch_size):
         x = acts[i : i + batch_size].to(device).float() * sae.scale
         z = sae.activate(sae.pre_acts(x))
         x_hat = sae.decode(z)
         sse += float((x - x_hat).pow(2).sum())
-        sst += float((x.double() - mean).pow(2).sum())
+        sst += float((x - mean_dev).pow(2).sum())
         active = z > 0
         l0 += float(active.sum())
-        fires += active.sum(0).double()
+        fires += active.sum(0).cpu().double()
     freq = fires / n
     return {
         "mse": sse / n,

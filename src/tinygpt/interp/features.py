@@ -38,15 +38,16 @@ def compute_feature_stats(
     nb = len(HIST_EDGES) - 1
     top_v = torch.full((n_top, n_lat), -1.0, device=device)
     top_r = torch.zeros((n_top, n_lat), dtype=torch.long, device=device)
-    fires = torch.zeros(n_lat, dtype=torch.float64, device=device)
-    sums = torch.zeros(n_lat, dtype=torch.float64, device=device)
-    hist = torch.zeros(n_lat * nb, dtype=torch.float64, device=device)
+    # float64 accumulators on the CPU (MPS has no float64); per-batch reductions are fp32.
+    fires = torch.zeros(n_lat, dtype=torch.float64)
+    sums = torch.zeros(n_lat, dtype=torch.float64)
+    hist = torch.zeros(n_lat * nb, dtype=torch.float32, device=device)
     edges = torch.tensor(HIST_EDGES[1:-1], dtype=torch.float32, device=device)
     for i in range(0, acts.shape[0], batch_size):
         z = sae.encode(acts[i : i + batch_size].to(device))
         active = z > 0
-        fires += active.sum(0).double()
-        sums += z.sum(0).double()
+        fires += active.sum(0).cpu().double()
+        sums += z.sum(0).cpu().double()
         k = min(n_top, z.shape[0])
         v, r = z.topk(k, dim=0)
         cat_v = torch.cat([top_v, v])
@@ -55,7 +56,7 @@ def compute_feature_stats(
         top_r = cat_r.gather(0, sel)
         rows, cols = active.nonzero(as_tuple=True)
         b = torch.bucketize(torch.log10(z[rows, cols]), edges)
-        hist.index_add_(0, cols * nb + b, torch.ones_like(b, dtype=torch.float64))
+        hist.index_add_(0, cols * nb + b, torch.ones_like(b, dtype=torch.float32))
     freq = (fires / acts.shape[0]).cpu().numpy()
     mean_active = (sums / fires.clamp_min(1)).cpu().numpy()
     return FeatureStats(
@@ -63,7 +64,7 @@ def compute_feature_stats(
         mean_active=mean_active,
         top_vals=top_v.cpu().numpy(),
         top_rows=top_r.cpu().numpy(),
-        hist=hist.view(n_lat, nb).cpu().numpy(),
+        hist=hist.view(n_lat, nb).cpu().double().numpy(),
         n_tokens=int(acts.shape[0]),
     )
 

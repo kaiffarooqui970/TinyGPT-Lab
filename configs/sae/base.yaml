@@ -1,0 +1,18 @@
+# S5 layer-3 SAE defaults. 16x expansion (6144 latents), batch 4096 tokens, Adam.
+acts_dir: data/acts/s5_l3
+kind: topk
+expansion: 16
+k: 32
+l1_coef: 1.0
+aux_coef: 0.03125
+train_tokens: 16777216   # ~4.3 epochs over 3.93M training activations
+heldout_tokens: 262144
+batch_size: 4096
+lr: 4.0e-4
+decay_frac: 0.2
+dead_tokens: 2000000
+log_interval: 100
+ce_eval_batches: 50
+ce_eval_batch_size: 32
+data_dir: data/tinystories
+device: auto

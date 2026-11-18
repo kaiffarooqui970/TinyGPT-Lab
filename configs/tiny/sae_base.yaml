@@ -1,0 +1,14 @@
+acts_dir: data/tiny/acts_t3
+kind: topk
+expansion: 4
+k: 8
+train_tokens: 393216
+heldout_tokens: 16384
+batch_size: 1024
+lr: 2.0e-3
+dead_tokens: 50000
+log_interval: 50
+ce_eval_batches: 5
+ce_eval_batch_size: 16
+data_dir: data/tiny/tokens
+device: cpu

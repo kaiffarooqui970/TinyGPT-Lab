@@ -1,0 +1,12 @@
+sae: "runs/sae/tiny_sae/*_topk_k8/sae.pt"
+tokenizer: data/tiny/tokenizer.json
+data_dir: data/tiny/tokens
+features:
+  - {name: auto_1, feature: -1, watch: ["."], steer_multipliers: [4.0, 8.0]}
+prompts: ["Once upon a time", "The little dog"]
+eval_batches: 10
+eval_batch_size: 16
+n_controls: 5
+samples_per_prompt: 5
+max_new_tokens: 24
+out: report_tiny

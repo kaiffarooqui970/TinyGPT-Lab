@@ -21,7 +21,7 @@ import numpy as np
 import torch
 
 from tinygpt.data.loader import TokenLoader
-from tinygpt.data.prepare import resolve, shard_paths
+from tinygpt.data.prepare import REPO_ROOT, resolve, shard_paths
 from tinygpt.model.gpt import load_gpt
 from tinygpt.train.metrics import pick_device
 
@@ -115,7 +115,9 @@ def collect(cfg: CollectConfig) -> dict:
         ft.close()
     assert mean is not None and per_pos_norm is not None
     meta = {
-        "checkpoint": cfg.checkpoint,
+        "checkpoint": str(resolve(cfg.checkpoint).relative_to(REPO_ROOT))
+        if resolve(cfg.checkpoint).is_relative_to(REPO_ROOT)
+        else str(resolve(cfg.checkpoint)),
         "layer": cfg.layer,
         "d_model": d,
         "block_size": T,

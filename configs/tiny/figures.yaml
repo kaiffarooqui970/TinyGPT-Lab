@@ -1,0 +1,8 @@
+out: report_tiny
+lr_sweep: tiny_lr_sweep
+scaling_sweep: tiny_scaling
+lrcheck_sweep: null
+main_model_prefix: t3
+acts_dir: data/tiny/acts_t3
+sae_sweep: tiny_sae
+n_boot: 200

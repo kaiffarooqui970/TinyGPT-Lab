@@ -95,3 +95,17 @@ def test_perfect_fit_possible() -> None:
         opt.zero_grad()
         sae.normalize_decoder()
     assert out.fvu.item() < 0.05
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="needs MPS")
+def test_metrics_and_feature_stats_run_on_mps() -> None:
+    from tinygpt.interp.features import compute_feature_stats
+    from tinygpt.sae.eval_sae import activation_metrics
+
+    sae = make()
+    acts = torch.randn(300, 16) * 3 + 1
+    m = activation_metrics(sae, acts, batch_size=128, device="mps")
+    m_cpu = activation_metrics(make(), acts, batch_size=128, device="cpu")
+    assert abs(m["fve"] - m_cpu["fve"]) < 1e-3
+    st = compute_feature_stats(make(), acts, n_top=3, device="mps")
+    assert st.hist.sum() > 0

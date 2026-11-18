@@ -1,0 +1,8 @@
+checkpoint: "runs/sweeps/tiny_scaling/*_t2_*/ckpt_final.pt"
+layer: 1
+data_dir: data/tiny/tokens
+n_tokens: 196608
+batch_size: 32
+out_dir: data/tiny/acts_t2
+shard_tokens: 65536
+device: cpu

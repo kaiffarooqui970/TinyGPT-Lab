@@ -68,9 +68,16 @@ class PrepareConfig:
 
 
 def resolve(path: str | Path) -> Path:
-    """Resolve a repo-relative path."""
+    """Resolve a repo-relative path. A path containing `*` is a glob: the last match in
+    sorted order wins (run dirs start with a timestamp, so that is the newest run)."""
     p = Path(path)
-    return p if p.is_absolute() else REPO_ROOT / p
+    p = p if p.is_absolute() else REPO_ROOT / p
+    if "*" in str(p):
+        matches = sorted(Path(p.anchor).glob(str(p.relative_to(p.anchor))))
+        if not matches:
+            raise FileNotFoundError(f"no match for {path}")
+        return matches[-1]
+    return p
 
 
 def iter_texts(cfg: DatasetConfig, split: str, limit: int | None = None) -> Iterator[str]:

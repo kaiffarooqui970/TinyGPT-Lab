@@ -1,0 +1,6 @@
+dataset: {hf_name: roneneldan/TinyStories, text_field: text, train_split: validation, val_split: null, val_docs: 2000, streaming: true}
+tokenizer_path: data/tiny/tokenizer.json
+out_dir: data/tiny/tokens
+shard_tokens: 2000000
+num_workers: 2
+chunk_docs: 500

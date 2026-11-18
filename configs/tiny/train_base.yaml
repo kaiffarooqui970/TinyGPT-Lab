@@ -1,0 +1,18 @@
+name: tiny
+model: {vocab_size: 1024, block_size: 64, n_layer: 2, n_head: 2, d_model: 32}
+data_dir: data/tiny/tokens
+tokenizer_path: data/tiny/tokenizer.json
+batch_size: 16
+tokens_per_param: 20.0
+lr: 3.0e-3
+warmup_frac: 0.05
+dtype: fp32
+device: cpu
+log_interval: 50
+eval_interval: 200
+eval_batches: 5
+final_eval_batches: 20
+eval_batch_size: 16
+sample_interval: 100000
+ckpt_interval: 100000
+sample_tokens: 32

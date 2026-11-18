@@ -43,6 +43,7 @@ def main() -> None:
     ap.add_argument("--tokenizer", default="data/tokenizer/tinystories_8k.json")
     args = ap.parse_args()
     seed_everything(args.seed)
+    args.sae = str(resolve(args.sae))  # resolve globs once
     device = pick_device()
     out = resolve(args.out)
     sae, ck = load_sae(args.sae, device)

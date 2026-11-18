@@ -1,0 +1,6 @@
+name: tiny_univ
+base_config: configs/tiny/sae_base.yaml
+runs:
+  t2: [acts_dir=data/tiny/acts_t2]
+  t3: [acts_dir=data/tiny/acts_t3]
+  t3_seed1: [acts_dir=data/tiny/acts_t3, seed=1]

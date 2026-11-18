@@ -35,6 +35,7 @@ class SAETrainConfig:
     aux_coef: float = 1.0 / 32.0
     train_tokens: int = 8_000_000  # may exceed the store: then it does several epochs
     heldout_tokens: int = 262_144  # last tokens of the store, never trained on
+    max_tokens: int | None = None  # use only the first N store tokens (equal budgets)
     batch_size: int = 4096
     lr: float = 5e-4
     decay_frac: float = 0.2  # linear LR decay to 0 over the final fraction
@@ -61,7 +62,7 @@ def train_sae(cfg: SAETrainConfig, run_dir: Path | None = None) -> tuple[SAE, di
     seed_everything(cfg.seed)
     device = pick_device(cfg.device)
     store = ActivationStore(cfg.acts_dir)
-    acts, _ = store.load_all()
+    acts, _ = store.load_all(max_tokens=cfg.max_tokens)
     n_train = len(acts) - cfg.heldout_tokens
     if n_train <= cfg.batch_size:
         raise ValueError("activation store too small for heldout_tokens + one batch")

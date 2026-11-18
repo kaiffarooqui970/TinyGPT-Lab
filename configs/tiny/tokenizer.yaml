@@ -1,0 +1,7 @@
+# Tiny CPU reproduction: everything comes from the TinyStories *validation* split (streamed,
+# ~20 MB) so a fresh clone runs end to end in minutes on a laptop.
+dataset: {hf_name: roneneldan/TinyStories, text_field: text, train_split: validation, val_split: null, val_docs: 2000, streaming: true}
+vocab_size: 1024
+train_docs: 5000
+heldout_docs: 1000
+out_path: data/tiny/tokenizer.json

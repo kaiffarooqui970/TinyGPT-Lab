@@ -1,0 +1,17 @@
+# Phase 7: sparsity-fidelity sweep at S5 layer 3. TopK over k, an LR check at k=32, and
+# the L1 baseline over its coefficient.
+name: sweep_s5
+base_config: configs/sae/base.yaml
+runs:
+  topk_k8: [k=8]
+  topk_k16: [k=16]
+  topk_k32: [k=32]
+  topk_k64: [k=64]
+  topk_k128: [k=128]
+  topk_k32_lr2e-4: [k=32, lr=2.0e-4]
+  topk_k32_lr1e-3: [k=32, lr=1.0e-3]
+  l1_0.1: [kind=l1, l1_coef=0.1]
+  l1_0.3: [kind=l1, l1_coef=0.3]
+  l1_1: [kind=l1, l1_coef=1.0]
+  l1_3: [kind=l1, l1_coef=3.0]
+  l1_10: [kind=l1, l1_coef=10.0]

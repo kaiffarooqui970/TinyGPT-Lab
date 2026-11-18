@@ -1,0 +1,5 @@
+name: tiny_lr_sweep
+base_config: configs/tiny/train_base.yaml
+sizes: {t1: {n_layer: 2, d_model: 32, n_head: 2}}
+lrs: [1.0e-3, 3.0e-3, 1.0e-2]
+overrides: [save_final_ckpt=false]

@@ -1,0 +1,8 @@
+name: tiny_sae
+base_config: configs/tiny/sae_base.yaml
+runs:
+  topk_k4: [kind=topk, k=4]
+  topk_k8: [kind=topk, k=8]
+  topk_k16: [kind=topk, k=16]
+  l1_3e-3: [kind=l1, l1_coef=3.0e-3]
+  l1_1e-2: [kind=l1, l1_coef=1.0e-2]

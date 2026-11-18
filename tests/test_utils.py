@@ -152,3 +152,13 @@ def test_hello_run_script(tmp_path: Path) -> None:
     assert (run_dir / "config.yaml").exists()
     assert (run_dir / "meta.json").exists()
     assert len(read_jsonl(run_dir / "metrics.jsonl")) > 0
+
+
+def test_resolve_glob_picks_latest(tmp_path: Path) -> None:
+    from tinygpt.data.prepare import resolve
+
+    for name in ["20260101-000000_a", "20260102-000000_a", "20251231-000000_a"]:
+        (tmp_path / name).mkdir()
+    assert resolve(str(tmp_path / "*_a")).name == "20260102-000000_a"
+    with pytest.raises(FileNotFoundError):
+        resolve(str(tmp_path / "*_zzz"))

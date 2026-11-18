@@ -26,3 +26,18 @@ def test_bootstrap_ci_covers_truth() -> None:
     lo, hi = res.ci["alpha"]
     assert lo <= alpha <= hi
     assert res.point.alpha > 0 and hi - lo < 0.5
+
+
+def test_sweep_run_names_parsed_from_dirs(tmp_path, monkeypatch) -> None:
+    import json
+
+    import tinygpt.scaling.analyze as an
+
+    root = tmp_path / "runs" / "sweeps" / "x"
+    d = root / "20261118-023410-040075_s3_lr4.13e-03"
+    d.mkdir(parents=True)
+    (d / "final.json").write_text(json.dumps({"val_loss": 1.0}))
+    (d / "config.yaml").write_text("lr: 0.00413\n")
+    monkeypatch.setattr(an, "resolve", lambda p: tmp_path / p)
+    runs = an.sweep_runs("x")
+    assert runs[0]["name"] == "s3_lr4.13e-03" and runs[0]["lr"] == 0.00413

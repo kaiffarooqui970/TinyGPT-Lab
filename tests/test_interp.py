@@ -90,3 +90,22 @@ def test_bootstrap_diff_ci() -> None:
     rng = np.random.default_rng(0)
     r = bootstrap_diff_ci(rng.normal(1, 1, 400), rng.normal(0, 1, 400))
     assert r["ci_lo"] < 1.0 < r["ci_hi"] and 0.7 < r["cohens_d"] < 1.3
+
+
+def test_max_correlation_recovers_permuted_latents() -> None:
+    from tinygpt.interp.universality import max_correlation, summarise
+
+    g = torch.Generator().manual_seed(0)
+    zA = torch.relu(torch.randn(2000, 30, generator=g))
+    perm = torch.randperm(30, generator=g)
+    zB = torch.cat(
+        [zA[:, perm] * 3.0, torch.relu(torch.randn(2000, 10, generator=g)), torch.zeros(2000, 1)],
+        dim=1,
+    )  # 30 copies, 10 novel, 1 dead
+    res = max_correlation(zA.half(), zB.half(), chunk=7)
+    mc = res["max_corr"]
+    assert np.allclose(mc[:30], 1.0, atol=1e-2)
+    assert np.all(res["argmax"][:30] == perm.numpy())
+    assert np.all(mc[30:40] < 0.2) and np.isnan(mc[40])
+    s = summarise(mc)
+    assert s["n_alive"] == 40 and abs(s["frac_ge_0.9"] - 0.75) < 1e-6

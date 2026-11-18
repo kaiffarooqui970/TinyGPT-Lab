@@ -1,0 +1,8 @@
+out: report
+lr_sweep: lr_sweep_s1
+scaling_sweep: scaling
+lrcheck_sweep: scaling_lrcheck
+main_model_prefix: s5
+acts_dir: data/acts/s5_l3
+sae_sweep: sweep_s5
+n_boot: 1000

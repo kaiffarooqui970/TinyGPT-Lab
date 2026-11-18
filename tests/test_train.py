@@ -114,3 +114,57 @@ def test_repo_train_configs_parse() -> None:
     root = Path(__file__).resolve().parents[1]
     for p in sorted((root / "configs" / "train").glob("*.yaml")):
         load_config(p, TrainConfig)
+
+
+def test_all_repo_configs_parse() -> None:
+    """Every YAML config in the repo validates against its dataclass schema."""
+    import importlib.util
+    import sys
+
+    from tinygpt.data.prepare import PrepareConfig, TokenizerConfig
+    from tinygpt.figures import FiguresConfig
+    from tinygpt.sae.collect import CollectConfig
+    from tinygpt.sae.train_sae import SAETrainConfig
+    from tinygpt.scaling.run_sweep import SweepConfig
+
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location("ts", root / "scripts" / "train_sae.py")
+    ts = importlib.util.module_from_spec(spec)
+    sys.modules["ts"] = ts  # dataclasses need their module registered
+    spec.loader.exec_module(ts)  # type: ignore[union-attr]
+    spec2 = importlib.util.spec_from_file_location("ri", root / "scripts" / "run_interventions.py")
+    ri = importlib.util.module_from_spec(spec2)
+    sys.modules["ri"] = ri
+    spec2.loader.exec_module(ri)  # type: ignore[union-attr]
+    schema = {
+        "tokenizer": TokenizerConfig,
+        "data": PrepareConfig,
+        "train_base": TrainConfig,
+        "lr_sweep": SweepConfig,
+        "scaling": SweepConfig,
+        "collect_": CollectConfig,
+        "sae_base": SAETrainConfig,
+        "sae_sweep": ts.SAESweepConfig,
+        "sae_universality": ts.SAESweepConfig,
+        "interventions": ri.InterventionConfig,
+        "figures": FiguresConfig,
+    }
+    checked = 0
+    for p in sorted((root / "configs" / "tiny").glob("*.yaml")):
+        cls = next(v for k, v in schema.items() if p.stem.startswith(k))
+        load_config(p, cls)
+        checked += 1
+    for p in sorted((root / "configs" / "sweeps").glob("*.yaml")):
+        load_config(p, SweepConfig)
+        checked += 1
+    for p in sorted((root / "configs" / "collect").glob("*.yaml")):
+        load_config(p, CollectConfig)
+        checked += 1
+    load_config(root / "configs" / "sae" / "base.yaml", SAETrainConfig)
+    for name in ("sweep_s5", "universality"):
+        load_config(root / "configs" / "sae" / f"{name}.yaml", ts.SAESweepConfig)
+    load_config(root / "configs" / "tokenizer.yaml", TokenizerConfig)
+    for p in (root / "configs" / "data").glob("*.yaml"):
+        load_config(p, PrepareConfig)
+    load_config(root / "configs" / "figures.yaml", FiguresConfig)
+    assert checked > 15
