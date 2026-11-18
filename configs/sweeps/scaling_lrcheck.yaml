@@ -1,0 +1,12 @@
+# Check of the LR-transfer rule at a mid size (S3): 0.5x and 2x the transferred LR.
+# If 1x (from the main sweep) is not best, the rule is mis-calibrated at this scale.
+name: scaling_lrcheck
+base_config: configs/train/base.yaml
+sizes:
+  s1: {n_layer: 2, d_model: 128, n_head: 4}
+  s3: {n_layer: 4, d_model: 192, n_head: 6}
+lr_rule: kaplan
+ref_size: s1
+ref_lr: 4.8e-3  # best of configs/sweeps/lr_sweep_s1.yaml (val 2.608)
+lr_multipliers: [0.5, 2.0]
+overrides: [sample_interval=100000, ckpt_interval=100000, save_final_ckpt=false]

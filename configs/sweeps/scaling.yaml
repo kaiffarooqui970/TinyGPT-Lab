@@ -1,0 +1,17 @@
+# Phase 5 main study: 5 sizes at 20 tokens/param, identical data order (data_seed 0).
+# LR is transferred from the S1 sweep optimum with Kaplan's LR(N) rule (see DECISIONS.md).
+name: scaling
+base_config: configs/train/base.yaml
+sizes:
+  s1: {n_layer: 2, d_model: 128, n_head: 4}
+  s2: {n_layer: 3, d_model: 160, n_head: 5}
+  s3: {n_layer: 4, d_model: 192, n_head: 6}
+  s4: {n_layer: 6, d_model: 256, n_head: 8}
+  s5: {n_layer: 6, d_model: 384, n_head: 6}
+lr_rule: kaplan
+ref_size: s1
+ref_lr: 4.8e-3  # best of configs/sweeps/lr_sweep_s1.yaml (val 2.608)
+lr_multipliers: [1.0]
+overrides: [sample_interval=5000, ckpt_interval=2500]
+size_overrides:
+  s5: ["keep_ckpt_steps=[100, 250, 500, 1000, 2000, 4000, 8000, 16000]"]

@@ -62,3 +62,18 @@ One line of reasoning per decision. Newest at the bottom of each phase.
 - **`final.json` and the checkpoint are written before the final samples are generated**: a sampling bug once crashed a sweep run after training had finished, which lost the run; results now persist first.
 - **Long runs are wrapped in `caffeinate -ims`**: macOS was idle-throttling a background run (12 s of CPU in 17 min).
 - **The ~10M Phase 4 acceptance model is the same run as the largest scaling point (S5)**: on M4 throughput (~14.6k tok/s), one 212M-token run costs ~4 h, so training it twice would double the dominant cost.
+
+## Phase 5 — Scaling
+
+- **Sizes S1–S5 = 0.43M, 0.95M, 1.77M, 4.82M, 10.6M non-embedding params** (not 1M–50M): measured M4 throughput (7.7k tok/s at 25M) puts a 25M model at ~18 h, and 50M × 20 tok/param = 1B tokens exceeds TinyStories (467M). The range still spans 25× in N.
+- **Shapes: d_model/n_layer between 53 and 64, head_dim 32 (S1–S4) or 64 (S5)**: Kaplan et al. show loss depends weakly on shape at fixed N, so we vary width and depth together.
+- **Constant batch of 8,192 tokens for all sizes**: a simplification; the critical batch size grows as loss falls, so the larger models may be slightly under-batched (noted as a limitation).
+- **Same data order (data_seed 0) for every size**: differences between sizes are not data-order noise.
+- **LR sweep at S1: 7 log-spaced LRs; optimum 4.8e-3 (val 2.608), with a clear U-shape (3.55 at 3e-4, 3.09 at 1.9e-2)**.
+- **LR transfer: Kaplan et al. (2020) eq. D.1, LR(N) ∝ 0.003239 − 0.0001395·ln N, anchored at the S1 optimum** → 4.8e-3, 4.4e-3, 4.1e-3, 3.7e-3, 3.3e-3. A simple, published rule instead of µP (which would need a re-parameterised model; out of time budget). Checked by a 0.5×/2× sweep at S3.
+- **Bootstrap CIs resample the 200 per-batch val losses of each run** (eval noise only; seed-to-seed variance would need repeated runs, which we cannot afford — stated as a limitation).
+
+## Phase 9 — Extension choice (made without waiting, per the user's instruction)
+
+Options considered: (1) universality across scale, (2) feature emergence over training (S5 weight snapshots), (3) SAE quality vs. model size.
+- **Chosen: (1) combined with (3)**: SAEs on S3/S4/S5 at relative depth ½ on *identical tokens*, matched by activation correlation (decoder cosine is undefined across different d_model). A second S5 SAE with another seed gives the seed-noise ceiling, so "absent at small scale" can be separated from "the SAE is not reproducible". Fidelity, dead latents and L0 at a fixed expansion factor give (3) for free. Option (2) remains possible because S5 snapshots are kept.
