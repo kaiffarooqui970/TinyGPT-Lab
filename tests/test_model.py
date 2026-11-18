@@ -123,3 +123,24 @@ def test_overfit_single_batch() -> None:
         loss.backward()
         opt.step()
     assert loss.item() < 0.05
+
+
+def test_residual_and_patched_forward() -> None:
+    m = tiny().eval()
+    x = torch.randint(0, 97, (2, 10))
+    with torch.no_grad():
+        full, _, _ = m(x)
+        same, _ = m.forward_patched(x, 1, lambda r: r)
+        assert torch.allclose(full, same, atol=1e-6)
+        r = m.residual(x, 1)
+        assert r.shape == (2, 10, 32)
+        zeroed, _ = m.forward_patched(x, 1, torch.zeros_like)
+        assert not torch.allclose(full, zeroed)
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="needs MPS")
+def test_sampling_with_cpu_generator_on_mps() -> None:
+    m = tiny().to("mps")
+    p = torch.randint(0, 97, (1, 3), device="mps")
+    out = generate(m, p, 5, temperature=1.0, generator=torch.Generator().manual_seed(0))
+    assert out.shape == (1, 8)

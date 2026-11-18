@@ -57,7 +57,12 @@ def generate(
             nxt = logits.argmax(-1, keepdim=True)
         else:
             logits = filter_logits(logits / temperature, top_k, top_p)
-            nxt = torch.multinomial(logits.softmax(-1), 1, generator=generator)
+            probs = logits.softmax(-1)
+            if generator is not None and generator.device != probs.device:
+                # A seeded CPU generator gives the same samples on any device.
+                nxt = torch.multinomial(probs.cpu(), 1, generator=generator).to(probs.device)
+            else:
+                nxt = torch.multinomial(probs, 1, generator=generator)
         out = torch.cat([out, nxt], dim=1)
         if eos_id is not None and bool((nxt == eos_id).all()):
             break

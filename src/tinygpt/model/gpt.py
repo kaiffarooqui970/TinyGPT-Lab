@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -89,8 +92,35 @@ class GPT(nn.Module):
         logits = self.lm_head(self.norm_f(x))
         loss = None
         if targets is not None:
-            loss = F.cross_entropy(logits.float().view(-1, logits.size(-1)), targets.view(-1))
+            loss = F.cross_entropy(logits.float().reshape(-1, logits.size(-1)), targets.reshape(-1))
         return logits, loss, new_past
+
+    # ------------------------------------------------------------------ interpretability
+    def residual(self, idx: torch.Tensor, layer: int) -> torch.Tensor:
+        """Residual stream after `layer` blocks (0 = token embeddings), shape (B, T, D).
+        Only the first `layer` blocks are run."""
+        x = self.tok_emb(idx)
+        for block in self.blocks[:layer]:
+            x, _ = block(x)
+        return x
+
+    def forward_patched(
+        self,
+        idx: torch.Tensor,
+        layer: int,
+        patch: Callable[[torch.Tensor], torch.Tensor],
+        targets: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+        """Forward pass with the residual after `layer` blocks replaced by `patch(resid)`.
+        Used for SAE splicing, ablations and steering."""
+        x = patch(self.residual(idx, layer))
+        for block in self.blocks[layer:]:
+            x, _ = block(x)
+        logits = self.lm_head(self.norm_f(x))
+        loss = None
+        if targets is not None:
+            loss = F.cross_entropy(logits.float().reshape(-1, logits.size(-1)), targets.reshape(-1))
+        return logits, loss
 
     # ------------------------------------------------------------------ accounting
     def num_params(self, non_embedding: bool = True) -> int:
@@ -114,3 +144,11 @@ class GPT(nn.Module):
         if include_lm_head:
             f += 6 * c.d_model * c.vocab_size
         return float(f)
+
+
+def load_gpt(path: str | Path, device: str | torch.device = "cpu") -> tuple[GPT, dict[str, Any]]:
+    """Load a GPT from a full checkpoint or a weights snapshot; returns (model, ckpt)."""
+    ckpt = torch.load(path, map_location="cpu", weights_only=False)
+    model = GPT(GPTConfig(**ckpt["model_cfg"]))
+    model.load_state_dict(ckpt["model"])
+    return model.to(device).eval(), ckpt

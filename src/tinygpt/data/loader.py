@@ -50,7 +50,7 @@ class TokenLoader:
             off = int(g - prev[s])
             rows.append(np.asarray(self.shards[s][off : off + self.block_size + 1], np.int64))
         buf = torch.from_numpy(np.stack(rows))
-        x, y = buf[:, :-1], buf[:, 1:]
+        x, y = buf[:, :-1].contiguous(), buf[:, 1:].contiguous()
         if self.device != "cpu":
             x, y = x.to(self.device, non_blocking=True), y.to(self.device, non_blocking=True)
         return x, y

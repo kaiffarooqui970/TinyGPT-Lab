@@ -1,0 +1,7 @@
+# Phase 5 step 1: LR sweep at the smallest size (S1), 7 log-spaced LRs, 20 tokens/param.
+name: lr_sweep_s1
+base_config: configs/train/base.yaml
+sizes:
+  s1: {n_layer: 2, d_model: 128, n_head: 4}
+lrs: [3.0e-4, 6.0e-4, 1.2e-3, 2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2]
+overrides: [eval_interval=200, sample_interval=100000, ckpt_interval=100000, save_final_ckpt=false]

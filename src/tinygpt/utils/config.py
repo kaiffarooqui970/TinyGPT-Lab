@@ -109,11 +109,25 @@ def from_dict(cls: type[T], data: dict[str, Any], _path: str = "") -> T:
     return cls(**kwargs)
 
 
-def load_config(path: str | Path, cls: type[T]) -> T:
-    """Load a YAML file into dataclass `cls`."""
+def apply_overrides(data: dict[str, Any], overrides: list[str]) -> dict[str, Any]:
+    """Apply `a.b.c=value` overrides (value parsed as YAML) to a nested dict in place."""
+    for item in overrides:
+        key, sep, raw = item.partition("=")
+        if not sep:
+            raise ConfigError(f"override {item!r} must look like key=value")
+        node = data
+        *parents, leaf = key.split(".")
+        for k in parents:
+            node = node.setdefault(k, {})
+        node[leaf] = yaml.safe_load(raw)
+    return data
+
+
+def load_config(path: str | Path, cls: type[T], overrides: list[str] | None = None) -> T:
+    """Load a YAML file into dataclass `cls`, applying optional `key=value` overrides."""
     with open(path) as fh:
         data = yaml.safe_load(fh) or {}
-    return from_dict(cls, data)
+    return from_dict(cls, apply_overrides(data, overrides or []))
 
 
 def to_dict(cfg: Any) -> dict[str, Any]:

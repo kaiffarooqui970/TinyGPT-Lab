@@ -50,3 +50,15 @@ One line of reasoning per decision. Newest at the bottom of each phase.
 - **Non-embedding params N exclude the tied embedding matrix (Kaplan et al. 2020)**: power laws in N are cleaner without embeddings, which matter a lot at small scale.
 - **FLOPs/token = 6N + 12·L·d·T (+ 6·d·V for the lm head)**: PaLM's accounting, used for MFU; the scaling study's compute axis uses the standard C = 6·N·D.
 - **Generation with cache crops the prompt to block_size−1 and restarts the cache when the context fills**: RoPE positions never exceed the table length; recomputing on overflow keeps it simple and correct.
+
+## Phase 4 — Training
+
+- **LR schedule is a pure function of the step (`lr_at`), not a torch scheduler object**: resume needs no scheduler state, and the schedule is trivially testable.
+- **No weight decay on norm gains or the (tied) embedding; wd = 0.1, betas (0.9, 0.95), clip 1.0, warmup 5% then cosine to 0.1·lr**: GPT-3/Chinchilla-style defaults.
+- **Resume restores model, optimiser, step, loader generator state and the Python/NumPy/torch(/CUDA/MPS) RNGs**; the test compares 8 straight steps with 3 + save + scramble RNG + resume + 5, bit-for-bit (CPU, fp32).
+- **bf16 autocast on MPS** (measured ~5% faster than fp32 at these sizes; fp32 is used in CPU tests for exactness).
+- **Weights-only snapshots (`weights_step*.pt`) at log-spaced steps**: ~4× smaller than full checkpoints (no Adam state); enough for analysis such as SAEs on intermediate checkpoints.
+- **The final eval logs all 200 per-batch val losses** (`final.json`): the scaling fit's bootstrap CIs resample them.
+- **`final.json` and the checkpoint are written before the final samples are generated**: a sampling bug once crashed a sweep run after training had finished, which lost the run; results now persist first.
+- **Long runs are wrapped in `caffeinate -ims`**: macOS was idle-throttling a background run (12 s of CPU in 17 min).
+- **The ~10M Phase 4 acceptance model is the same run as the largest scaling point (S5)**: on M4 throughput (~14.6k tok/s), one 212M-token run costs ~4 h, so training it twice would double the dominant cost.

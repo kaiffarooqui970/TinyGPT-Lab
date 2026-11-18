@@ -91,6 +91,15 @@ def test_load_config_yaml(tmp_path: Path) -> None:
     assert cfg.steps == 5 and cfg.optim.lr == 1e-4
 
 
+def test_load_config_overrides(tmp_path: Path) -> None:
+    p = tmp_path / "c.yaml"
+    p.write_text("name: demo\noptim:\n  lr: 1.0e-4\n")
+    cfg = load_config(p, Outer, ["optim.lr=3e-3", "steps=7", "tags=[a, b]"])
+    assert cfg.optim.lr == 3e-3 and cfg.steps == 7 and cfg.tags == ["a", "b"]
+    with pytest.raises(ConfigError):
+        load_config(p, Outer, ["optim.nope=1"])
+
+
 # ---------------------------------------------------------------- run dir
 def test_create_run_dir_saves_config_and_meta(tmp_path: Path) -> None:
     cfg = Outer(name="demo")

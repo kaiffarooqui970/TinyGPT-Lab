@@ -1,0 +1,19 @@
+# CPU smoke config used by tests and the README "reproduce on a laptop" path.
+name: tiny_cpu
+seed: 0
+model: {vocab_size: 8192, block_size: 64, n_layer: 2, n_head: 2, d_model: 64}
+data_dir: data/tinystories
+tokenizer_path: data/tokenizer/tinystories_8k.json
+batch_size: 16
+max_steps: 200
+lr: 3.0e-3
+warmup_steps: 20
+dtype: fp32
+device: cpu
+log_interval: 20
+eval_interval: 100
+eval_batches: 5
+final_eval_batches: 10
+eval_batch_size: 16
+sample_interval: 200
+ckpt_interval: 100
