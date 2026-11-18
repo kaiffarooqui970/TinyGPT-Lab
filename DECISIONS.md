@@ -30,3 +30,23 @@ One line of reasoning per decision. Newest at the bottom of each phase.
 - **Incremental training: pair counts + pair→words index + lazy max-heap**: each merge touches only the words containing that pair (7,935 merges over 180 MB in ~7 s).
 - **Special tokens get the last ids; `encode` treats them as text unless `allowed_special=True`**: user text containing "<|endoftext|>" can never inject a document boundary.
 - **Tokenizer trained on the first 200k TinyStories docs (~180 MB)**: merge statistics saturate long before the full 1.9 GB, and held-out compression (4.16 B/tok) matches train (4.14 B/tok).
+
+## Phase 2 — Data
+
+- **Every document is followed by `<|endoftext|>`, and windows may span documents**: standard GPT pre-training packing; the model learns to reset context at EOT, and no tokens are lost to padding.
+- **Windows never cross shard boundaries; shards are sampled in proportion to their valid start positions**: every start position across the dataset is equally likely, and no seams are introduced.
+- **Random windows (sampled with replacement) from a single seeded `torch.Generator`**: the data order is fixed by the seed, identical across model sizes, and checkpointable (generator state + step).
+- **Eval uses `fixed_batches(seed)`, a separate generator**: the val loss is always measured on exactly the same windows, unaffected by training draws.
+- **Tokenization runs in a spawn-based process pool with `imap` (ordered)**: the output is identical to a single-process run.
+- TinyStories: 466,769,099 train tokens, 4,691,376 val tokens (8192-vocab BPE).
+
+## Phase 3 — Model
+
+- **RoPE in 'rotate-half' layout, applied to q and k after the projection, with a position offset for the KV cache**: standard (GPT-NeoX/LLaMA); relative-position attention with no learned position parameters.
+- **One fused qkv linear; the attention softmax is computed in fp32 in the manual path**: fewer kernels; fp32 softmax avoids bf16 overflow.
+- **Cached attention with T > 1 uses an explicit offset mask `tril(diagonal=S-T)`**: SDPA's `is_causal` assumes square masks and would be wrong for chunked prefill.
+- **SwiGLU hidden = 8/3·d rounded up to a multiple of 64**: same parameter count as a 4·d GELU MLP; multiples of 64 suit matmul kernels.
+- **Init N(0, 0.02); residual output projections (attn.proj, mlp.w2) N(0, 0.02/√(2L)); RMSNorm gains = 1**: GPT-2 scheme, which keeps the residual stream variance roughly constant with depth.
+- **Non-embedding params N exclude the tied embedding matrix (Kaplan et al. 2020)**: power laws in N are cleaner without embeddings, which matter a lot at small scale.
+- **FLOPs/token = 6N + 12·L·d·T (+ 6·d·V for the lm head)**: PaLM's accounting, used for MFU; the scaling study's compute axis uses the standard C = 6·N·D.
+- **Generation with cache crops the prompt to block_size−1 and restarts the cache when the context fills**: RoPE positions never exceed the table length; recomputing on overflow keeps it simple and correct.
