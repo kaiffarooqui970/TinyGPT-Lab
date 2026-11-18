@@ -1,0 +1,17 @@
+# FineWeb-Edu 10BT sample, streamed; the first 20k docs are held out for validation.
+# Uses the same tokenizer path; retrain the tokenizer on FineWeb for serious use.
+dataset:
+  hf_name: HuggingFaceFW/fineweb-edu
+  hf_config: sample-10BT
+  text_field: text
+  train_split: train
+  val_split: null
+  val_docs: 20000
+  max_train_docs: 500000
+  streaming: true
+tokenizer_path: data/tokenizer/tinystories_8k.json
+out_dir: data/fineweb_edu
+shard_tokens: 100000000
+num_workers: 8
+chunk_docs: 1000
+seed: 0

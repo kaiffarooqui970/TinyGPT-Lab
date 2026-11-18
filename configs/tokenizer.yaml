@@ -1,0 +1,12 @@
+# Byte-level BPE on TinyStories. Merges are learned on the first `train_docs` train
+# stories; compression is measured on held-out validation stories.
+dataset:
+  hf_name: roneneldan/TinyStories
+  text_field: text
+  train_split: train
+  val_split: validation
+vocab_size: 8192
+train_docs: 200000
+heldout_docs: 5000
+out_path: data/tokenizer/tinystories_8k.json
+seed: 0

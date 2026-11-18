@@ -17,3 +17,16 @@ One line of reasoning per decision. Newest at the bottom of each phase.
 - **wandb is an optional extra (`uv sync --extra wandb`)**: the JSONL logs are the source of truth for every reported number.
 - **pre-commit runs ruff + ruff-format + pytest**: lint and the test suite gate every commit.
 - **pre-commit hooks call `uv run ruff`/`uv run pytest` (local hooks)**: the hook versions then match `uv.lock` exactly; a separately pinned ruff disagreed on deprecated rules.
+
+## Run mode
+
+- **All phases run without stopping between them** (the user's instruction on 2026-11-18, overriding PLAN's per-phase gate). Every phase still ends with tests and a commit.
+- **Compute: Apple M4 (MPS), not a 24 GB CUDA GPU**: this machine has no CUDA, so experiments are scaled down to fit hours of M4 time and ~9 GB of free disk. All sizes stay configurable; the README gives the GPU-scale configs and estimates.
+
+## Phase 1 — Tokenizer
+
+- **GPT-2 pre-tokenization regex rewritten for stdlib `re`** (`[^\W\d_]` for letters, plus a `[\s\S]` catch-all): the `regex` package is not on the allowed list, and the catch-all keeps the split lossless.
+- **Merge ties broken by the smallest (left, right) id pair**: makes training deterministic regardless of dict or heap ordering; tested against a naive full-recount trainer.
+- **Incremental training: pair counts + pair→words index + lazy max-heap**: each merge touches only the words containing that pair (7,935 merges over 180 MB in ~7 s).
+- **Special tokens get the last ids; `encode` treats them as text unless `allowed_special=True`**: user text containing "<|endoftext|>" can never inject a document boundary.
+- **Tokenizer trained on the first 200k TinyStories docs (~180 MB)**: merge statistics saturate long before the full 1.9 GB, and held-out compression (4.16 B/tok) matches train (4.14 B/tok).

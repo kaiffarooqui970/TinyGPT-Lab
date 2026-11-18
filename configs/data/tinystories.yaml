@@ -1,0 +1,11 @@
+dataset:
+  hf_name: roneneldan/TinyStories
+  text_field: text
+  train_split: train
+  val_split: validation
+tokenizer_path: data/tokenizer/tinystories_8k.json
+out_dir: data/tinystories
+shard_tokens: 100000000
+num_workers: 8
+chunk_docs: 2000
+seed: 0
