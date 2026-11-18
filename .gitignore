@@ -1,0 +1,18 @@
+# outputs
+/runs/
+/data/
+/checkpoints/
+*.pt
+*.bin
+*.npy
+*.memmap
+wandb/
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+# os
+.DS_Store
