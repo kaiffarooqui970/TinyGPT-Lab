@@ -1,0 +1,261 @@
+{
+ "status": "draft",
+ "labeller": "claude",
+ "features": [
+  {
+   "id": 16,
+   "label": "not",
+   "desc": "Position-0 artifact: fires at ~15.1 on the first token of each 256-token window, whatever the token"
+  },
+  {
+   "id": 32,
+   "label": "interpretable",
+   "desc": "Sub-word 'cur' (curved, cursed, curling)"
+  },
+  {
+   "id": 50,
+   "label": "interpretable",
+   "desc": "Blank line after '\u2026?\" asked X.', i.e. the start of the reply turn in a dialogue"
+  },
+  {
+   "id": 100,
+   "label": "interpretable",
+   "desc": "<|endoftext|> story boundary"
+  },
+  {
+   "id": 135,
+   "label": "interpretable",
+   "desc": "'and' joining items in a list of nouns (plates and cups, chairs and tables)"
+  },
+  {
+   "id": 173,
+   "label": "partly",
+   "desc": "'wheels' after 'big'/'four big'; also fires on 'walls'"
+  },
+  {
+   "id": 205,
+   "label": "partly",
+   "desc": "Weak: 'a' introducing a new entity ('there was a', 'found a', 'saw a')"
+  },
+  {
+   "id": 249,
+   "label": "interpretable",
+   "desc": "'anymore' after 'not scared/grumpy'"
+  },
+  {
+   "id": 459,
+   "label": "interpretable",
+   "desc": "'joy' in 'with joy' / 'in joy'"
+  },
+  {
+   "id": 492,
+   "label": "interpretable",
+   "desc": "'listened' ('I should have listened to you')"
+  },
+  {
+   "id": 547,
+   "label": "partly",
+   "desc": "Sentence-final period, mostly after habitual clauses ('every day.')"
+  },
+  {
+   "id": 762,
+   "label": "interpretable",
+   "desc": "First letter 'J' of a character name opening a new story"
+  },
+  {
+   "id": 1069,
+   "label": "interpretable",
+   "desc": "'told' after a parent reacts ('mom got upset and told him\u2026')"
+  },
+  {
+   "id": 1076,
+   "label": "interpretable",
+   "desc": "'of' in 'in the middle of'"
+  },
+  {
+   "id": 1580,
+   "label": "interpretable",
+   "desc": "Closing punctuation inside a quoted utterance, just before the closing quote"
+  },
+  {
+   "id": 1645,
+   "label": "interpretable",
+   "desc": "'such' in 'such a [adjective] [noun]'"
+  },
+  {
+   "id": 1695,
+   "label": "interpretable",
+   "desc": "'showed/showing' (showing something off to someone)"
+  },
+  {
+   "id": 1837,
+   "label": "interpretable",
+   "desc": "Closing quote after a quoted polite word ('please', 'thank you', 'no')"
+  },
+  {
+   "id": 1877,
+   "label": "interpretable",
+   "desc": "'went' after a stated want ('he was hungry\u2026 so he went to')"
+  },
+  {
+   "id": 2411,
+   "label": "interpretable",
+   "desc": "Opening quote of a reply line that answers a question"
+  },
+  {
+   "id": 2473,
+   "label": "partly",
+   "desc": "Adjective after sentence-initial 'The' ('The old man', 'The nice man')"
+  },
+  {
+   "id": 2592,
+   "label": "partly",
+   "desc": "Sub-word 'n' (nook, numb, natural), plus 'other'"
+  },
+  {
+   "id": 2950,
+   "label": "interpretable",
+   "desc": "Shape nouns ('circle', 'square')"
+  },
+  {
+   "id": 3075,
+   "label": "interpretable",
+   "desc": "'right' in 'the right [thing/words/time]'"
+  },
+  {
+   "id": 3116,
+   "label": "interpretable",
+   "desc": "'lion'"
+  },
+  {
+   "id": 3227,
+   "label": "interpretable",
+   "desc": "'living' in 'living room'"
+  },
+  {
+   "id": 3319,
+   "label": "interpretable",
+   "desc": "Mojibake '\u20ac' of a curly opening quote at the start of a reply line (data-encoding feature)"
+  },
+  {
+   "id": 3322,
+   "label": "interpretable",
+   "desc": "'brush' (hair, teeth, paint)"
+  },
+  {
+   "id": 3392,
+   "label": "interpretable",
+   "desc": "'home' in 'When they got home,'"
+  },
+  {
+   "id": 3422,
+   "label": "interpretable",
+   "desc": "'lot' in 'a lot'"
+  },
+  {
+   "id": 3705,
+   "label": "interpretable",
+   "desc": "Sentence-initial 'There' introducing a discovery ('There she saw\u2026')"
+  },
+  {
+   "id": 3780,
+   "label": "interpretable",
+   "desc": "'a' in the story opener 'Once upon a time, there was a'"
+  },
+  {
+   "id": 3863,
+   "label": "not",
+   "desc": "Position-0 artifact: 'They' at the first token of a window, constant activation 9.86"
+  },
+  {
+   "id": 3882,
+   "label": "interpretable",
+   "desc": "Paragraph-initial 'On' ('On the way', 'On their way home')"
+  },
+  {
+   "id": 3964,
+   "label": "interpretable",
+   "desc": "'thirsty'"
+  },
+  {
+   "id": 3975,
+   "label": "interpretable",
+   "desc": "'nice' in the moral 'it is not nice to\u2026'"
+  },
+  {
+   "id": 4103,
+   "label": "not",
+   "desc": "Position-0 artifact: \"'s\" at the first token of a window, constant activation 12.18"
+  },
+  {
+   "id": 4117,
+   "label": "partly",
+   "desc": "'the' after a motion verb toward a place ('arrived at the', 'explore the'); frequent (3.4%)"
+  },
+  {
+   "id": 4457,
+   "label": "interpretable",
+   "desc": "Intensifier 'so' after 'was/were' ('was so happy')"
+  },
+  {
+   "id": 4468,
+   "label": "interpretable",
+   "desc": "'baby' ('a mommy and a baby', 'baby bird')"
+  },
+  {
+   "id": 4683,
+   "label": "not",
+   "desc": "Weak and mixed ('me', 'now') with no clear pattern"
+  },
+  {
+   "id": 4964,
+   "label": "interpretable",
+   "desc": "'pay'"
+  },
+  {
+   "id": 4989,
+   "label": "interpretable",
+   "desc": "'sun' in 'until the sun went down/set'"
+  },
+  {
+   "id": 5184,
+   "label": "interpretable",
+   "desc": "'fight/fighting'"
+  },
+  {
+   "id": 5185,
+   "label": "interpretable",
+   "desc": "Preposition after 'thought' ('thought of', 'thought about')"
+  },
+  {
+   "id": 5247,
+   "label": "interpretable",
+   "desc": "Suffix token 'ed' split off a word (erupt-ed, address-ed)"
+  },
+  {
+   "id": 5289,
+   "label": "partly",
+   "desc": "'a' after 'in' ('in a big house', 'in a forest')"
+  },
+  {
+   "id": 5573,
+   "label": "partly",
+   "desc": "'had' after a subject; several top contexts are near the window start"
+  },
+  {
+   "id": 5717,
+   "label": "not",
+   "desc": "Mixed mid-word pieces (transf-orm, prod-uc) and 'of'"
+  },
+  {
+   "id": 5930,
+   "label": "interpretable",
+   "desc": "'every' in '(played together) every day'"
+  }
+ ],
+ "counts": {
+  "not": 5,
+  "interpretable": 37,
+  "partly": 8
+ }
+}
