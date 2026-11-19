@@ -84,3 +84,17 @@ Options considered: (1) universality across scale, (2) feature emergence over tr
 
 - **Activations come from the held-out val split as sequential non-overlapping 256-token windows, 2,097,152 tokens per model (S3, S4, S5)**: free disk fell to ~4 GB during training (macOS swap growth), so the planned 4M-token S5 store (+2M each for S3/S4, ~5 GB) would not fit. Sequential windows use every token exactly once, and the tokens are identical across models, as Phase 9 needs. The PLAN's 50–100M tokens is ~25–50× more than we can store here.
 - **SAE CE evaluation and interventions sample only val tokens after the collected region (`min_start`)**: the downstream metrics never use tokens whose activations the SAE trained on.
+- **S5 finished: val loss 1.6084 at 212.4M tokens** (10,621,824 non-embedding params).
+- **Scaling fit: L(N) = 1.282 + 376.9·N^(−0.435)**, α 95% CI [0.409, 0.461], RMSE 0.0025 nats. Fitting S1–S4 only predicts S5 at 1.619 against 1.608 measured (0.011 nats off).
+
+## Phases 6, 7, 9 — compute
+
+- **Phases 6, 7 and 9 (and the Phase 8 dashboard stats) ran on a rented RunPod A40 (secure cloud, $0.59/h)**: the user set a €2 budget. Community RTX 4090 and secure RTX 3090 were sold out. The pod was up 1.15 h (≈ $0.68) via `scripts/pod_phase6_9.sh`, then deleted. Each SAE took ~3.3 min on the A40 against an estimated 10–15 min on the M4.
+- **The activation stores (3.3 GB) were not copied back**: the local disk has ~5 GB free. They are deterministic (sequential val windows) and take ~3 min to regenerate with `scripts/collect_acts.py`.
+- **No 25M model**: within €2 it would need the full 760 MB train set uploaded plus several A40 hours. The scaling range stays at 25× in N (stated as a limitation).
+
+## Phase 7 — SAE choice
+
+- **Chosen SAE: TopK k = 32 (`sweep_s5/*_topk_k32`)**: it sits at the knee of the Pareto curve, with 0% dead latents, FVU 0.055 and CE +0.046 nats when spliced (99.38% of the zero-ablation gap recovered). k = 64/128 buy little fidelity for 2–4× more active latents per token, and k = 8 leaves 21% of latents dead.
+- **TopK dominates L1 at every L0** (e.g. L1 λ=1: L0 124, CE +0.128 vs TopK k=128: CE +0.026), as Gao et al. (2024) report.
+- **The base SAE LR (4e-4) is not optimal**: lr 1e-3 at k = 32 gives CE +0.037 (vs +0.046). We keep 4e-4 for every reported SAE so the sweep and universality runs stay comparable, and report this as a negative result.
