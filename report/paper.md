@@ -142,11 +142,105 @@ features.
 
 ## 4. Experiments and results
 
-<!-- RESULTS: filled from report/results/*.json once the runs finish. -->
+### 4.1 Scaling law
+
+| model | N (non-emb.) | D (tokens) | C = 6ND | peak LR | val loss |
+|---|---|---|---|---|---|
+| S1 | 426,624 | 8.5M | 2.2e13 | 4.80e-3 | 2.616 |
+| S2 | 953,440 | 19.1M | 1.1e14 | 4.42e-3 | 2.221 |
+| S3 | 1,771,200 | 35.4M | 3.8e14 | 4.13e-3 | 1.997 |
+| S4 | 4,820,224 | 96.4M | 2.8e15 | 3.67e-3 | 1.750 |
+| S5 | 10,621,824 | 212.4M | 1.4e16 | 3.30e-3 | 1.608 |
+
+The fitted law is **L(N) = 1.282 + 376.9 · N^(−0.435)**. The 95% bootstrap CIs are
+E ∈ [1.235, 1.324], A ∈ [274, 511] and α ∈ [0.409, 0.461] (Figure `scaling_law.png`). The fit
+is tight: RMSE 0.0025 nats, with all residuals below 0.005 nats, which is comparable to the
+standard error of each run's validation loss (≈ 0.0046–0.0051). **Extrapolation test:** fitting
+S1–S4 only (α = 0.452, E = 1.315) predicts 1.619 for S5, against 1.608 measured. The 0.011-nat
+miss is about 2× the eval noise, and the full fit is slightly flatter. In compute,
+L(C) = 1.282 + B·C^(−0.218) (α_C 95% CI [0.206, 0.231]), which is consistent with α_N / 2,
+as expected when D ∝ N.
+
+The LR transfer holds up at S3: 0.5×, 1× and 2× the transferred LR reach 2.0135, 1.9974 and
+2.0035, so the transferred value is the best of the three, and the optimum is flat
+(±0.016 nats over a 4× LR range).
+
+### 4.2 Sparse autoencoders on S5
+
+All SAEs use 16× expansion (6,144 latents) on S5's residual stream after block 3. Each is
+trained for 16.8M tokens (9.1 epochs over 1.84M activations) and evaluated on 262,144
+held-out activations. CE is measured on validation tokens the SAE never saw. Clean CE is
+1.589, and zero-ablation gives 9.011.
+
+| SAE | L0 | FVE | dead | ΔCE (nats) | CE recovered |
+|---|---|---|---|---|---|
+| TopK k=8 | 8 | 0.906 | 21.4% | 0.115 | 98.46% |
+| TopK k=16 | 16 | 0.931 | 0.6% | 0.066 | 99.12% |
+| **TopK k=32** | 32 | 0.946 | 0.0% | 0.046 | 99.38% |
+| TopK k=64 | 64 | 0.955 | 0.0% | 0.034 | 99.54% |
+| TopK k=128 | 128 | 0.963 | 0.0% | 0.026 | 99.65% |
+| L1 λ=0.1 | 781 | 0.976 | 0.0% | 0.016 | 99.79% |
+| L1 λ=0.3 | 472 | 0.953 | 0.0% | 0.039 | 99.48% |
+| L1 λ=1 | 124 | 0.890 | 0.0% | 0.128 | 98.28% |
+| L1 λ=3 | 13 | 0.770 | 0.0% | 0.547 | 92.63% |
+| L1 λ=10 | 1.0 | 0.167 | 0.0% | 5.143 | 30.71% |
+
+**TopK dominates L1 at every sparsity level** (Figure `sae_pareto.png`). At a matched
+L0 ≈ 13–16, TopK costs 0.066 nats against 0.547 for L1, and L1 latents at low λ are often
+dense (34% fire on more than 10% of tokens at λ = 0.1). We pick **k = 32** as the working SAE:
+it is the knee of the curve, has no dead latents, and loses only 0.046 nats. Going to k = 128
+saves a further 0.02 nats at 4× the L0. At k = 8, AuxK does not prevent 21% of latents from
+dying.
+
+### 4.3 Interpreting features
+
+<!-- PENDING: hand labels of 50 random latents (report/results/label_sheet.md) and the
+ablation / steering runs (scripts/run_interventions.py) once features are chosen. -->
+
+### 4.4 Universality across scale
+
+SAE quality at the fixed recipe barely depends on model size. FVE is 0.957 / 0.948 / 0.945
+and ΔCE is 0.047 / 0.047 / 0.046 nats for S3 / S4 / S5 (Figure `sae_quality_vs_size.png`),
+and none of them has dead latents. A second-seed S5 SAE gives the same numbers (FVE 0.946,
+ΔCE 0.046).
+
+| S5 latents matched in… | median best corr. | ≥ 0.5 | ≥ 0.7 | ≥ 0.9 |
+|---|---|---|---|---|
+| S5, other SAE seed (ceiling) | 0.736 | 81.7% | 55.3% | 20.6% |
+| S4 | 0.598 | 62.2% | 36.4% | 10.3% |
+| S3 | 0.518 | 52.2% | 29.1% | 7.5% |
+
+Feature overlap falls steadily with the size gap (Figure `universality_hist.png`). In the
+other direction, smaller models' features are mostly found in S5: S3 latents have a median
+best match of 0.655 in S5, and S4 latents 0.662. This fits the picture of a larger model that
+keeps most smaller-model features and adds new ones. Of the 3,398 S5 latents that are
+reproducible across seeds (correlation ≥ 0.7), **102 (3.0%) are scale-specific**, with no
+counterpart above 0.3 in S3 or S4, and 1,609 are shared across all three sizes (≥ 0.7). The
+two groups differ in kind. Scale-specific latents are **contextual rather than lexical**:
+their median correlation with the best single-token indicator is 0.14, against 0.77 for
+shared latents. They also fire more often (median frequency 0.78% vs 0.33%). Their top
+contexts (`universality_examples.md`) include "the other [animals]" (latent 400, plural noun
+after "the other"), the object of "ate" (latent 126), and the activity after "loved to"
+(latent 169). These are syntactic or semantic roles that a token detector cannot express.
 
 ## 5. Negative results and limitations
 
-<!-- Filled from the logged results. -->
+- **Small scale range.** N spans 0.43M–10.6M (25×). A planned 25M point was dropped for the
+  compute budget (laptop M4 for training; €2 of rented GPU for the SAEs), and 50M would need
+  more tokens than TinyStories has at 20 tokens/param. The fitted E and α describe this range
+  only, and the extrapolation test already shows the curve flattening slightly at S5.
+- **Bootstrap CIs cover eval noise only.** Each size was trained once, so seed-to-seed
+  variance is not included and the CIs are optimistic.
+- **Constant batch size** (8,192 tokens) for all sizes. The larger models may be under-batched.
+- **Small SAE training sets.** Disk limits cut the activation store to 2.1M tokens per model
+  (1.84M for training), so each SAE sees its data about 9 times, against 50–100M fresh tokens
+  in the plan. Fidelity is still high (99.4% CE recovered), but rarer features are probably
+  missed.
+- **Untuned SAE learning rate.** At k = 32, lr 1e-3 beats the default 4e-4 (ΔCE 0.037 vs
+  0.046). We kept 4e-4 everywhere so that runs stay comparable.
+- **Activation correlation is not identity.** A best-match correlation below 0.3 can also mean
+  that a feature is split or merged differently, not that it is absent. The seed ceiling
+  (55% of latents ≥ 0.7) shows that SAEs only partly reproduce themselves even at one size.
 
 ## 6. Conclusion
 
